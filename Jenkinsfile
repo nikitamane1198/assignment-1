@@ -1,26 +1,29 @@
-#!/usr/bin/env groovy
 pipeline {
-    agent {
-        node any
-    }
+    agent any
 
     stages {
-        stage('Build Image') {
-            when {
-                branch 'master'  //only run these steps on the master branch
+        stage('Build') {
+            steps {
+                script {
+                    def app = docker.build("housing-price-prediction")
+                }
             }
-
-            // Jenkins Stage to Build the Docker Image
-
         }
-
-        stage('Publish Image') {
-            when {
-                branch 'master'  //only run these steps on the master branch
+        stage('Test') {
+            steps {
+                script {
+                    docker.image("housing-price-prediction").inside {
+                        sh 'python -m unittest discover -s tests'
+                    }
+                }
             }
-            
-            // Jenkins Stage to Publish the Docker Image to Dockerhub or any Docker repository of your choice.
-
+        }
+        stage('Deploy') {
+            steps {
+                script {
+                    docker.image("housing-price-prediction").run('-p 80:80')
+                }
+            }
         }
     }
 }
